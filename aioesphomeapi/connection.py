@@ -526,7 +526,7 @@ class APIConnection:
             raw_msg = pkt.data
             if msg_type not in MESSAGE_TYPE_TO_PROTO:
                 _LOGGER.debug("%s: Skipping message type %s", self.log_name, msg_type)
-                return
+                continue
 
             msg = MESSAGE_TYPE_TO_PROTO[msg_type]()
             try:
