@@ -559,7 +559,6 @@ class APIConnection:
                 self.log_name,
             )
             await self._report_fatal_error(err)
-            break
         except APIConnectionError as err:
             _LOGGER.info(
                 "%s: Error while reading incoming messages: %s",
@@ -567,7 +566,6 @@ class APIConnection:
                 err,
             )
             await self._report_fatal_error(err)
-            break
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.warning(
                 "%s: Unexpected error while reading incoming messages: %s",
@@ -576,7 +574,6 @@ class APIConnection:
                 exc_info=True,
             )
             await self._report_fatal_error(err)
-            break
 
     async def _handle_internal_messages(self, msg: Any) -> None:
         if isinstance(msg, DisconnectRequest):
