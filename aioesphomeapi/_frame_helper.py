@@ -74,20 +74,33 @@ class APIPlaintextFrameHelper(APIFrameHelper):
     async def read_packet(self) -> Packet:
         async with self._read_lock:
             try:
-                preamble = await self._reader.readexactly(1)
-                if preamble[0] != 0x00:
-                    if preamble[0] == 0x01:
+                # Read preamble, which should always 0x00
+                # Also try to get the length and msg type
+                # to avoid multiple calls to readexactly
+                init_bytes = await self._reader.readexactly(3)
+                if init_bytes[0] != 0x00:
+                    if init_bytes[0] == 0x01:
                         raise RequiresEncryptionAPIError(
                             "Connection requires encryption"
                         )
-                    raise ProtocolAPIError(f"Invalid preamble {preamble[0]:02x}")
+                    raise ProtocolAPIError(f"Invalid preamble {init_bytes[0]:02x}")
 
-                length = b""
-                while not length or (length[-1] & 0x80) == 0x80:
+                if init_bytes[1] & 0x80 == 0x80:
+                    # Length is longer than 1 byte
+                    length = init_bytes[1:2]
+                    msg_type = b""
+                else:
+                    length = init_bytes[1:1]
+                    msg_type = init_bytes[2:2]
+
+                # If the message is long, we need to read the rest of the length
+                while length[-1] & 0x80 == 0x80:
                     length += await self._reader.readexactly(1)
                 length_int = bytes_to_varuint(length)
                 assert length_int is not None
-                msg_type = b""
+
+                # If the message length was longer than 1 byte, we need to read the
+                # message type
                 while not msg_type or (msg_type[-1] & 0x80) == 0x80:
                     msg_type += await self._reader.readexactly(1)
                 msg_type_int = bytes_to_varuint(msg_type)
