@@ -90,25 +90,19 @@ class APIPlaintextFrameHelper(APIFrameHelper):
                     length = init_bytes[1:3]
                     msg_type = b""
                 else:
+                    # This is the most common case with 99% of messages
+                    # needing a single byte for length and type which means
+                    # we avoid 2 calls to readexactly
                     length = init_bytes[1:2]
                     msg_type = init_bytes[2:3]
 
-                _LOGGER.warning(
-                    "Reading plaintext frame init_bytes=%s, length=%s, msg_type=%s",
-                    init_bytes,
-                    length,
-                    msg_type,
-                )
-
                 # If the message is long, we need to read the rest of the length
                 while length[-1] & 0x80 == 0x80:
-                    _LOGGER.warning("Reading plaintext frame length=%s", length)
                     length += await self._reader.readexactly(1)
 
                 # If the message length was longer than 1 byte, we need to read the
                 # message type
                 while not msg_type or (msg_type[-1] & 0x80) == 0x80:
-                    _LOGGER.warning("Reading plaintext frame msg_type=%s", msg_type)
                     msg_type += await self._reader.readexactly(1)
 
                 length_int = bytes_to_varuint(length)
