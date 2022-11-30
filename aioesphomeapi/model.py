@@ -758,9 +758,6 @@ class UserService(APIModelBase):
 
 
 # ==================== BLUETOOTH ====================
-def _long_uuid(uuid: str) -> str:
-    """Convert a UUID to a long UUID."""
-    return f"0000{uuid[2:].lower()}-0000-1000-8000-00805f9b34fb"
 
 
 def _join_split_uuid(value: List[int]) -> str:
@@ -769,7 +766,16 @@ def _join_split_uuid(value: List[int]) -> str:
 
 
 def _convert_bluetooth_le_service_uuids(value: List[str]) -> List[str]:
-    return [_long_uuid(v) if len(v) < 8 else v.lower() for v in value]
+    if not value:
+        # empty list, don't convert
+        return value
+
+    # Long UUID inlined to avoid call stack inside the
+    # list comprehension
+    return [
+        f"0000{v.lower()}-0000-1000-8000-00805f9b34fb" if len(v) < 8 else v.lower()
+        for v in value
+    ]
 
 
 def _convert_bluetooth_le_service_data(
@@ -778,8 +784,10 @@ def _convert_bluetooth_le_service_data(
     if isinstance(value, dict):
         return value
 
+    # Long UUID inlined to avoid call stack inside the
+    # dict comprehension
     return {
-        _long_uuid(v.uuid)  # type: ignore[union-attr]
+        f"0000{v.uuid.lower()}-0000-1000-8000-00805f9b34fb"  # type: ignore[union-attr]
         if len(v.uuid) < 8  # type: ignore[union-attr]
         else v.uuid.lower(): bytes(v.data if v.data else v.legacy_data)  # type: ignore[union-attr]
         for v in value
