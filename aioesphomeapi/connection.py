@@ -546,37 +546,37 @@ class APIConnection:
 
     async def _read_loop(self) -> None:
         assert self._frame_helper is not None
-        while True:
-            if not self._is_socket_open:
-                # Socket closed but task isn't cancelled yet
-                break
-            try:
+        try:
+            while True:
+                if not self._is_socket_open:
+                    # Socket closed but task isn't cancelled yet
+                    break
                 self._to_process.put_nowait(await self._frame_helper.read_packet())
-            except SocketClosedAPIError as err:
-                # don't log with info, if closed the site that closed the connection should log
-                _LOGGER.debug(
-                    "%s: Socket closed, stopping read loop",
-                    self.log_name,
-                )
-                await self._report_fatal_error(err)
-                break
-            except APIConnectionError as err:
-                _LOGGER.info(
-                    "%s: Error while reading incoming messages: %s",
-                    self.log_name,
-                    err,
-                )
-                await self._report_fatal_error(err)
-                break
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.warning(
-                    "%s: Unexpected error while reading incoming messages: %s",
-                    self.log_name,
-                    err,
-                    exc_info=True,
-                )
-                await self._report_fatal_error(err)
-                break
+        except SocketClosedAPIError as err:
+            # don't log with info, if closed the site that closed the connection should log
+            _LOGGER.debug(
+                "%s: Socket closed, stopping read loop",
+                self.log_name,
+            )
+            await self._report_fatal_error(err)
+            break
+        except APIConnectionError as err:
+            _LOGGER.info(
+                "%s: Error while reading incoming messages: %s",
+                self.log_name,
+                err,
+            )
+            await self._report_fatal_error(err)
+            break
+        except Exception as err:  # pylint: disable=broad-except
+            _LOGGER.warning(
+                "%s: Unexpected error while reading incoming messages: %s",
+                self.log_name,
+                err,
+                exc_info=True,
+            )
+            await self._report_fatal_error(err)
+            break
 
     async def _handle_internal_messages(self, msg: Any) -> None:
         if isinstance(msg, DisconnectRequest):
