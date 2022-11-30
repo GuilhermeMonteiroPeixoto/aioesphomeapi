@@ -778,10 +778,10 @@ def _convert_bluetooth_le_service_data(
     if isinstance(value, dict):
         return value
 
-    return { 
-        _long_uuid(v.uuid)  # type: ignore
-        if len(v.uuid) < 8  # type: ignore
-        else v.uuid.lower(): bytes(v.data if v.data else v.legacy_data)   # type: ignore
+    return {
+        _long_uuid(v.uuid)  # type: ignore[union-attr]
+        if len(v.uuid) < 8  # type: ignore[union-attr]
+        else v.uuid.lower(): bytes(v.data if v.data else v.legacy_data)  # type: ignore[union-attr]
         for v in value
     }
 
